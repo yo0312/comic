@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#12121a">
+<title>현장 스케줄</title>
+<style>
+  :root{--bg:#f4f4f7;--card:#fff;--ink:#1a1a22;--sub:#6a6a78;--line:#e4e4ea;--now:#ff5a3c;--nowbg:#fff2ee;--star:#f0a500;--starbg:#fff9e8}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+  body{font-family:"Apple SD Gothic Neo","Malgun Gothic",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;padding-bottom:40px}
+  header{position:sticky;top:0;z-index:20;background:#12121a;color:#fff;padding:13px 16px 11px;box-shadow:0 2px 12px rgba(0,0,0,.18)}
+  .htop{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .title{font-size:18px;font-weight:800;letter-spacing:-.3px}
+  .clock{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:#ffd7cd}
+  .clock small{font-size:11px;font-weight:600;color:#9a9aa8;margin-left:2px}
+  .src{font-size:11px;color:#8a8a98;margin-top:5px;font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .src a{color:#8ab4ff;text-decoration:underline;cursor:pointer}
+  .seclabel{font-size:10px;color:#7a7a88;font-weight:800;letter-spacing:.5px;margin-top:9px;text-transform:uppercase}
+  .chips{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .secchips{padding-top:4px}
+  .whochips{padding-top:8px}
+  .chip{flex:0 0 auto;border:none;border-radius:999px;padding:8px 14px;font-size:14px;font-weight:700;color:#fff;background:#33333f;opacity:.5;cursor:pointer;transition:opacity .12s,transform .08s}
+  .chip.on{opacity:1}
+  .chip:active{transform:scale(.94)}
+  .secchip{background:#2b2b3a;border:1.5px solid #3d3d50;padding:7px 13px;font-size:13px}
+  .secchip.on{background:#fff;color:#12121a;border-color:#fff;opacity:1}
+  .bar{display:flex;gap:8px;padding:10px 16px 0;align-items:center;flex-wrap:wrap}
+  .btn{border:none;font-size:14px;font-weight:800;padding:11px 12px;border-radius:12px;cursor:pointer}
+  .btn:active{filter:brightness(.93)}
+  .jump{background:var(--now);color:#fff;flex:1}
+  .toggle{border:1px solid var(--line);background:var(--card);color:var(--sub);font-weight:700;padding:11px 13px;white-space:nowrap}
+  .toggle.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .connect{padding:14px 16px;background:#1b1b26;color:#fff;border-top:1px solid #2a2a38}
+  .connect h3{font-size:14px;margin-bottom:8px;font-weight:800}
+  .connect p{font-size:12px;color:#a0a0b0;line-height:1.55;margin-bottom:10px}
+  .connect input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a3a48;background:#0f0f16;color:#fff;font-size:13px;margin-bottom:8px}
+  .connect .go{width:100%;background:#159e7a;color:#fff}
+  .err{color:#ff8a7a;font-size:12px;margin-top:8px;font-weight:700;display:none}
+  main{padding:6px 12px 0}
+  .tblock{margin-top:13px}
+  .thead{display:flex;align-items:center;gap:8px;padding:0 4px 7px}
+  .ttime{font-size:26px;font-weight:900;letter-spacing:-.5px;font-variant-numeric:tabular-nums;padding:2px}
+  .tflag{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--ink);color:#fff;letter-spacing:.3px}
+  .tflag.now{background:var(--now)}
+  .tflag.done{background:#b3b3bd}
+  .tblock.past{opacity:.42}
+  .anytime .ttime{font-size:18px;color:var(--sub)}
+  .card{background:var(--card);border-radius:16px;padding:14px 15px;margin-bottom:9px;display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);cursor:pointer;transition:transform .07s,opacity .12s}
+  .card:active{transform:scale(.985)}
+  .tblock.now .card{border-color:#ffd0c5;background:var(--nowbg)}
+  .card.star{border-color:#f4d488;background:var(--starbg)}
+  .card.done{opacity:.5}
+  .card.done .task{text-decoration:line-through;text-decoration-thickness:2px}
+  .who{flex:0 0 auto;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;margin-top:1px;word-break:keep-all;text-align:center;line-height:1.05;padding:2px}
+  .body{flex:1;min-width:0}
+  .task{font-size:16.5px;font-weight:700;line-height:1.4;letter-spacing:-.2px;word-break:keep-all}
+  .starmark{color:var(--star);font-weight:900;margin-right:2px}
+  .note{margin-top:7px;font-size:13.5px;font-weight:600;color:#a15b00;background:#fff4dd;border-radius:8px;padding:6px 9px;line-height:1.45;word-break:keep-all}
+  .check{flex:0 0 auto;width:26px;height:26px;border-radius:50%;border:2.5px solid #d4d4dc;margin-top:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:900;transition:.12s}
+  .card.done .check{background:#37b24d;border-color:#37b24d}
+  .foot{text-align:center;color:var(--sub);font-size:12px;margin-top:22px;line-height:1.6;padding:0 20px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 10px;justify-content:center;margin-top:8px}
+  .legend span{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;color:var(--sub)}
+  .dot{width:11px;height:11px;border-radius:3px}
+</style>
+</head>
+<body>
+<header>
+  <div class="htop">
+    <div class="title" id="title">현장 스케줄</div>
+    <div class="clock" id="clock">--:--</div>
+  </div>
+  <div class="src" id="src"></div>
+  <div class="seclabel" id="seclabel" style="display:none">구간</div>
+  <div class="chips secchips" id="sections" style="display:none"></div>
+  <div class="chips whochips" id="chips"></div>
+</header>
+
+<section class="connect" id="connect">
+  <h3>구글시트 연결</h3>
+  <p><b>현장업무 탭</b>을 연 상태에서 주소창 URL을 복사해 붙여넣으세요 (그 탭 정보가 같이 담깁니다). 시트는 <b>공유 → "링크가 있는 모든 사용자: 뷰어"</b>로 열어두면 됩니다.</p>
+  <input id="sheetInput" placeholder="https://docs.google.com/spreadsheets/d/... 주소 붙여넣기" inputmode="url">
+  <button class="btn go" id="goBtn">연결하기</button>
+  <div class="err" id="err"></div>
+</section>
+
+<div class="bar" id="controls" style="display:none">
+  <button class="btn jump" id="jump">지금 할 일로 이동 ↓</button>
+  <button class="btn toggle" id="hidePast">지난 항목 숨기기</button>
+</div>
+
+<main id="board"></main>
+<div class="foot" id="foot"></div>
+
+<script>
+const PALETTE=["#e8543e","#2e7dd1","#7b54c4","#dc8a00","#159e7a","#d14d8b","#3a7bd5","#c0392b","#0e9488","#8e44ad","#c2410c","#0369a1"];
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return(this.m||{})[k]}},set(k,v){try{localStorage.setItem(k,v)}catch(e){(this.m=this.m||{})[k]=v}}};
+let DATA=[],colorMap={},filter="전체",sectionSel=null,hidePast=false,sheetUrl="",lastCsv="",firstDraw=true,pollTimer=null;
+const paramSection=new URLSearchParams(location.search).get("section");
+const dayKey="sched_"+new Date().toISOString().slice(0,10);
+let done=JSON.parse(store.get(dayKey)||"{}");
+const idOf=d=>d.section+"|"+d.t+"|"+d.who+"|"+d.task.slice(0,10);
+const saveDone=()=>store.set(dayKey,JSON.stringify(done));
+const toMin=t=>{const m=String(t).match(/(\d{1,2}):(\d{2})/);return m?(+m[1])*60+(+m[2]):9999};
+const norm=t=>{const m=String(t).match(/(\d{1,2}):(\d{2})/);return m?m[1].padStart(2,"0")+":"+m[2]:String(t)};
+const esc=s=>String(s).replace(/[<>&]/g,m=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[m]));
+
+function toCsvUrl(u){u=(u||"").trim();if(!u)return"";if(u.includes("output=csv")||u.includes("tqx=out:csv"))return u;if(u.includes("/pubhtml")||/\/pub(\?|$)/.test(u))return u.replace(/\/pubhtml.*$/,"/pub").replace(/\/pub\?.*$/,"/pub")+"?output=csv";let m=u.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);if(m){const id=m[1];const g=u.match(/[#&?]gid=(\d+)/);return `https://docs.google.com/spreadsheets/d/${id}/gviz/tq?tqx=out:csv`+(g?("&gid="+g[1]):"")}if(/^[a-zA-Z0-9-_]{20,}$/.test(u))return `https://docs.google.com/spreadsheets/d/${u}/gviz/tq?tqx=out:csv`;return u;}
+function parseCSV(t){t=t.replace(/^\uFEFF/,"");const rows=[];let row=[],f="",q=false;for(let i=0;i<t.length;i++){const c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}else{if(c==='"')q=true;else if(c===","){row.push(f);f=""}else if(c==="\n"){row.push(f);rows.push(row);row=[];f=""}else if(c==="\r"){}else f+=c}}row.push(f);rows.push(row);return rows;}
+
+function parseRows(rows){
+  let h=-1;for(let i=0;i<rows.length;i++){const c=rows[i].map(x=>String(x).trim());if(c.some(x=>x==="담당"||x==="담당자")&&c.some(x=>x.includes("시간"))){h=i;break}}
+  if(h<0)return[];const head=rows[h].map(x=>String(x).trim());
+  const idxHas=(...ks)=>head.findIndex(c=>c&&ks.some(k=>c.includes(k)));
+  const cWho=head.findIndex(c=>c==="담당"||c==="담당자");
+  const cTime=idxHas("시간"),cTask=idxHas("내용","업무","할일","할 일"),cRound=idxHas("회차");
+  let cStar=head.findIndex(c=>c==="★"||(c&&(c.includes("중요")||c.includes("별표"))));
+  if(cStar<0&&cWho>0&&(head[0]===""||head[0]===undefined))cStar=0;
+  let cNote=head.findIndex(c=>c&&(c.includes("비고")||c.includes("메모")||c==="특이사항"));
+  if(cNote<0){const cand=cTask+1;if(cand<head.length&&cand!==cTime&&cand!==cWho&&cand!==cStar&&cand!==cRound)cNote=cand;}
+  const colHasText=idx=>{if(idx<0)return false;for(let i=h+1;i<rows.length;i++){if(rows[i]&&String(rows[i][idx]||"").trim())return true}return false};
+  if(!colHasText(cNote)&&colHasText(cRound))cNote=cRound;
+  const g=(r,c)=>c>=0?String((r&&r[c])||"").trim():"";
+  const out=[];let section="전체";
+  for(let i=h+1;i<rows.length;i++){const r=rows[i];if(!r)continue;
+    const a=g(r,cStar),who=g(r,cWho),time=g(r,cTime),task=g(r,cTask);
+    if(a&&a!=="★"&&!who&&!time&&!task){section=a;continue;}      // 구간 라벨
+    if(!task&&!time)continue;                                    // 빈 줄
+    const star=a==="★"||/★|●|○/.test(a);
+    out.push({section,t:time?norm(time):"",who:who||"공지",task:task||"(내용 없음)",note:g(r,cNote),star});
+  }
+  return out;
+}
+function assignColors(){colorMap={};let i=0;for(const d of DATA){if(!(d.who in colorMap)){colorMap[d.who]=PALETTE[i%PALETTE.length];i++}}}
+function sections(){return[...new Set(DATA.map(d=>d.section))]}
+function ensureSection(){const ss=sections();if(ss.includes(sectionSel))return;const saved=store.get("sectionSel");sectionSel=(paramSection&&ss.includes(paramSection))?paramSection:(saved&&ss.includes(saved))?saved:ss[ss.length-1]||"전체";}
+
+async function loadSheet(showErr){
+  const url=toCsvUrl(sheetUrl);if(!url)return;
+  try{
+    const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw new Error("HTTP "+res.status);
+    const csv=await res.text();if(csv.trim().startsWith("<"))throw new Error("접근 불가");
+    if(csv===lastCsv)return;lastCsv=csv;
+    const parsed=parseRows(parseCSV(csv));
+    if(!parsed.length){if(showErr)fail("표를 못 읽었어요. [담당][시간][내용] 헤더가 있는지 확인하세요.");return}
+    DATA=parsed;assignColors();ensureSection();
+    document.getElementById("err").style.display="none";
+    document.getElementById("connect").style.display="none";
+    document.getElementById("controls").style.display="flex";
+    render();if(firstDraw){firstDraw=false;setTimeout(scrollNow,250)}
+  }catch(e){if(showErr)fail("시트를 못 불러왔어요. 공유를 '링크가 있는 모든 사용자: 뷰어'로 바꿨는지 확인해주세요. ("+e.message+")")}
+}
+function fail(m){const el=document.getElementById("err");el.textContent="⚠ "+m;el.style.display="block";document.getElementById("connect").style.display="block"}
+function connect(url,save){sheetUrl=url;lastCsv="";firstDraw=true;if(save)store.set("sheetUrl",url);loadSheet(true);if(pollTimer)clearInterval(pollTimer);pollTimer=setInterval(()=>loadSheet(false),5000)}
+document.getElementById("goBtn").onclick=()=>{const v=document.getElementById("sheetInput").value.trim();if(!v)return;connect(v,true)};
+
+function secItems(){return DATA.filter(d=>d.section===sectionSel)}
+function peopleList(){return[...new Set(secItems().map(d=>d.who))]}
+function secTimes(){return[...new Set(secItems().filter(d=>d.t).map(d=>d.t))].sort((a,b)=>toMin(a)-toMin(b))}
+function nowMin(){const n=new Date();return n.getHours()*60+n.getMinutes()}
+function currentSlot(){let c=null;const nm=nowMin();for(const t of secTimes())if(toMin(t)<=nm)c=t;return c}
+function nextSlot(){const nm=nowMin();return secTimes().find(t=>toMin(t)>nm)||null}
+
+function renderSecChips(){
+  const ss=sections();const wrap=document.getElementById("sections"),lab=document.getElementById("seclabel");
+  if(ss.length<=1){wrap.style.display="none";lab.style.display="none";return}
+  wrap.style.display="flex";lab.style.display="block";
+  wrap.innerHTML=ss.map(s=>`<button class="chip secchip ${s===sectionSel?'on':''}" data-s="${esc(s)}">${esc(s)}</button>`).join("");
+  wrap.querySelectorAll(".secchip").forEach(b=>b.onclick=()=>{sectionSel=b.dataset.s;store.set("sectionSel",sectionSel);filter="전체";render();setTimeout(scrollNow,150)});
+}
+function renderWhoChips(){
+  const box=document.getElementById("chips");const list=["전체",...peopleList()];
+  box.innerHTML=list.map(p=>{const c=p==="전체"?"#5566ff":(colorMap[p]||"#5a5a68");return `<button class="chip ${filter===p?'on':''}" data-p="${esc(p)}" style="background:${c}">${esc(p)}</button>`}).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.p;render()});
+}
+function renderSrc(){
+  document.getElementById("src").innerHTML=`🔗 연결됨 · 5초마다 갱신 <a id="reconnect">시트 변경</a>`;
+  document.getElementById("reconnect").onclick=()=>{document.getElementById("connect").style.display="block";document.getElementById("sheetInput").value=sheetUrl};
+  document.getElementById("foot").innerHTML=`카드 탭 = 완료 표시 (이 폰에만 저장) · 표 수정은 구글시트에서<br><div class="legend" id="legend"></div>`;
+  document.getElementById("legend").innerHTML=peopleList().map(p=>`<span><i class="dot" style="background:${colorMap[p]}"></i>${esc(p)}</span>`).join("")+`<span><i class="dot" style="background:#f0a500"></i>★ 꼭 챙길 것</span>`;
+}
+function cardHtml(d){const id=idOf(d),isDone=!!done[id],c=colorMap[d.who]||"#5a5a68";
+  return `<div class="card ${d.star?'star':''} ${isDone?'done':''}" data-id="${esc(id)}"><div class="who" style="background:${c}">${esc(d.who)}</div><div class="body"><div class="task">${d.star?'<span class="starmark">★</span>':''}${esc(d.task)}</div>${d.note?`<div class="note">📌 ${esc(d.note).replace(/\n/g,"<br>")}</div>`:''}</div><div class="check">✓</div></div>`;
+}
+function render(){
+  renderSecChips();renderWhoChips();renderSrc();
+  const items=secItems().filter(d=>filter==="전체"||d.who===filter);
+  const cur=currentSlot();const board=document.getElementById("board");let html="";
+  const untimed=items.filter(d=>!d.t);
+  if(untimed.length){html+=`<section class="tblock anytime"><div class="thead"><span class="ttime">상시 · 시간무관</span></div>`;for(const d of untimed)html+=cardHtml(d);html+=`</section>`;}
+  for(const t of secTimes()){
+    const rows=items.filter(d=>d.t===t);if(!rows.length)continue;
+    const state=cur&&toMin(t)<toMin(cur)?"past":(t===cur?"now":"future");
+    if(hidePast&&state==="past"&&rows.every(r=>done[idOf(r)]))continue;
+    const allDone=rows.every(r=>done[idOf(r)]);
+    let flag=state==="now"?`<span class="tflag now">지금</span>`:state==="past"?(allDone?`<span class="tflag done">완료</span>`:`<span class="tflag" style="background:#c0392b">확인</span>`):"";
+    html+=`<section class="tblock ${state}" data-t="${t}"><div class="thead"><span class="ttime">${t}</span>${flag}</div>`;
+    for(const d of rows)html+=cardHtml(d);html+=`</section>`;
+  }
+  board.innerHTML=html||`<div class="foot" style="margin-top:40px">이 항목이 없어요</div>`;
+  board.querySelectorAll(".card").forEach(el=>el.onclick=()=>{const id=el.dataset.id;if(done[id])delete done[id];else done[id]=1;saveDone();render()});
+}
+function scrollNow(){const cur=currentSlot()||secTimes()[0];const el=cur?document.querySelector(`.tblock[data-t="${cur}"]`):null;if(el)el.scrollIntoView({behavior:"smooth",block:"start"});else window.scrollTo({top:0,behavior:"smooth"})}
+document.getElementById("jump").onclick=scrollNow;
+document.getElementById("hidePast").onclick=e=>{hidePast=!hidePast;e.target.classList.toggle("on",hidePast);e.target.textContent=hidePast?"지난 항목 보기":"지난 항목 숨기기";render()};
+function tick(){const n=new Date();const hh=String(n.getHours()).padStart(2,"0"),mm=String(n.getMinutes()).padStart(2,"0");const nx=nextSlot();document.getElementById("clock").innerHTML=`${hh}:${mm}`+(DATA.length?(nx?`<small>다음 ${nx}</small>`:""):"")}
+tick();setInterval(tick,10000);setInterval(()=>{if(DATA.length)render()},60000);
+(function init(){const p=new URLSearchParams(location.search).get("sheet");const saved=store.get("sheetUrl");if(p){connect(decodeURIComponent(p),true)}else if(saved){document.getElementById("sheetInput").value=saved;connect(saved,false)}})();
+</script>
+</body>
+</html>

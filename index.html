@@ -140,7 +140,17 @@ function parseRows(rows){
 }
 function assignColors(){colorMap={};let i=0;for(const d of DATA)for(const w of d.whos){if(!(w in colorMap)){colorMap[w]=PALETTE[i%PALETTE.length];i++}}}
 function sections(){return[...new Set(DATA.map(d=>d.section))]}
-function ensureSection(){const ss=sections();if(ss.includes(sectionSel))return;const saved=store.get("sectionSel");sectionSel=(paramSection&&ss.includes(paramSection))?paramSection:(saved&&ss.includes(saved))?saved:ss[ss.length-1]||"전체";}
+const WD=["일요일","월요일","화요일","수요일","목요일","금요일","토요일"];
+function todayWD(){return WD[new Date().getDay()];}
+function sectionForToday(){const t=todayWD();return sections().find(s=>s.includes(t))||null;}
+function ensureSection(){const ss=sections();if(ss.includes(sectionSel))return;
+  const saved=store.get("sectionSel_"+dayKey);          // 그날 안에서만 기억(날 바뀌면 다시 오늘 요일로)
+  const today=sectionForToday();
+  sectionSel=(paramSection&&ss.includes(paramSection))?paramSection
+    :(saved&&ss.includes(saved))?saved
+    :today?today
+    :ss[ss.length-1]||"전체";
+}
 
 async function loadSheet(showErr){const url=toCsvUrl(sheetUrl);if(!url)return;
   try{const res=await fetch(url,{cache:"no-store"});if(!res.ok)throw new Error("HTTP "+res.status);
@@ -168,15 +178,15 @@ function nextSlot(){const nm=nowMin();return secTimes().find(t=>toMin(t)>nm)||nu
 function renderSecChips(){const ss=sections();const wrap=document.getElementById("sections"),lab=document.getElementById("seclabel");
   if(ss.length<=1){wrap.style.display="none";lab.style.display="none";return}
   wrap.style.display="flex";lab.style.display="block";
-  wrap.innerHTML=ss.map(s=>`<button class="chip secchip ${s===sectionSel?'on':''}" data-s="${esc(s)}">${esc(s)}</button>`).join("");
-  wrap.querySelectorAll(".secchip").forEach(b=>b.onclick=()=>{sectionSel=b.dataset.s;store.set("sectionSel",sectionSel);filter="전체";render();setTimeout(scrollNow,150)});
+  const td=sectionForToday();wrap.innerHTML=ss.map(s=>`<button class="chip secchip ${s===sectionSel?'on':''}" data-s="${esc(s)}">${esc(s)}${s===td?' <span style=\'color:#ff6b52\'>●</span>':''}</button>`).join("");
+  wrap.querySelectorAll(".secchip").forEach(b=>b.onclick=()=>{sectionSel=b.dataset.s;store.set("sectionSel_"+dayKey,sectionSel);filter="전체";render();setTimeout(scrollNow,150)});
 }
 function renderWhoChips(){const box=document.getElementById("chips");const list=["전체",...peopleList()];
   box.innerHTML=list.map(p=>{const c=p==="전체"?"#5566ff":(colorMap[p]||"#5a5a68");return `<button class="chip ${filter===p?'on':''}" data-p="${esc(p)}" style="background:${c}">${esc(p)}</button>`}).join("");
   box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.p;render()});
 }
 function renderSrc(){
-  document.getElementById("src").innerHTML=`🔗 연결됨 · 5초마다 갱신 <a id="reconnect">시트 변경</a>`;
+  document.getElementById("src").innerHTML=`📅 오늘 <b style="color:#cfe3ff">${todayWD()}</b> · 🔗 5초마다 갱신 <a id="reconnect">시트 변경</a>`;
   document.getElementById("reconnect").onclick=()=>{document.getElementById("connect").style.display="block";document.getElementById("sheetInput").value=sheetUrl};
   document.getElementById("foot").innerHTML=`카드 탭 = 완료 표시 (이 폰에만 저장) · 표 수정은 구글시트에서<br><div class="legend" id="legend"></div>`;
   document.getElementById("legend").innerHTML=peopleList().map(p=>`<span><i class="dot" style="background:${colorMap[p]}"></i>${esc(p)}</span>`).join("")+`<span><i class="dot" style="background:#e11d2e"></i>★ 중요</span>`;
